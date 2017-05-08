@@ -20,9 +20,9 @@ __device__ long long int multRow(int noOfElems, int *colIndices, int *nonZeroEle
     long long int sum = 0;
     for (int j = 0; j < noOfElems; j++)
     {
-	long long int num1 = nonZeroElems[j];
-	long long int num2 = vecTOR[colIndices[j]];
-	sum += (num1) * (num2);
+		long long int num1 = nonZeroElems[j];
+		long long int num2 = vecTOR[colIndices[j]];
+		sum += (num1) * (num2);
     }
     return sum;
 }
@@ -32,9 +32,9 @@ __global__ void multKernel(int *firstElemsRows, int *colIndices, int *nonZeroEle
     int currRow = blockIdx.x * blockDim.x + threadIdx.x;
     if (currRow < numRows)
     {
-	int rowStart = firstElemsRows[currRow];
-	int rowEnd = firstElemsRows[currRow + 1];
-	output[currRow] = multRow(rowEnd - rowStart, colIndices + rowStart, nonZeroElems + rowStart, vecTOR);
+		int rowStart = firstElemsRows[currRow];
+		int rowEnd = firstElemsRows[currRow + 1];
+		output[currRow] = multRow(rowEnd - rowStart, colIndices + rowStart, nonZeroElems + rowStart, vecTOR);
     }
 }
 
@@ -42,54 +42,54 @@ void getInput(char *in_file)
 {
     if (proc_Id == 0)
     {
-	//get input in proc 0
-	ifstream f_in;
-	f_in.open(in_file);
-	//headers, dim and stuff
-	string junk, not_junk;
-	string temp;
-	int data_item;
-	int x, y;
-	f_in >> junk >> not_junk;
-	f_in >> junk >> dim >> not_junk;
-	f_in >> temp;
+		//get input in proc 0
+		ifstream f_in;
+		f_in.open(in_file);
+		//headers, dim and stuff
+		string junk, not_junk;
+		string temp;
+		int data_item;
+		int x, y;
+		f_in >> junk >> not_junk;
+		f_in >> junk >> dim >> not_junk;
+		f_in >> temp;
 
-	int xold = -1;
-	while (temp[0] != 'B')
-	{
-	    x = atoi(temp.c_str());
-	    f_in >> y >> data_item;
-	    data.push_back(data_item);
-	    indices.push_back(y);
-	    if (x != xold)
-	    {
-		int diff = x - xold - 1;
-		while (diff--)
+		int xold = -1;
+		while (temp[0] != 'B')
 		{
-		    ptrs.push_back(indices.size() - 1);
+			x = atoi(temp.c_str());
+			f_in >> y >> data_item;
+			data.push_back(data_item);
+			indices.push_back(y);
+			if (x != xold)
+			{
+			int diff = x - xold - 1;
+			while (diff--)
+			{
+				ptrs.push_back(indices.size() - 1);
+			}
+
+			ptrs.push_back(indices.size() - 1);
+			xold = x;
+			}
+			f_in >> temp;
+		}
+		int endIndex = ptrs.size();
+		int differ = dim - endIndex;
+		while (differ--)
+			ptrs.push_back(indices.size());
+
+		vec.resize(dim);
+		for (int i = 0; i < dim; i++)
+		{
+			f_in >> data_item;
+			vec[i] = data_item;
 		}
 
-		ptrs.push_back(indices.size() - 1);
-		xold = x;
-	    }
-	    f_in >> temp;
-	}
-	int endIndex = ptrs.size();
-	int differ = dim - endIndex;
-	while (differ--)
-	    ptrs.push_back(indices.size());
+		f_in.close();
 
-	vec.resize(dim);
-	for (int i = 0; i < dim; i++)
-	{
-	    f_in >> data_item;
-	    vec[i] = data_item;
-	}
-
-	f_in.close();
-
-	//pick up left over rows for proc 0
-	num_rows += dim % comm_size;
+		//pick up left over rows for proc 0
+		num_rows += dim % comm_size;
     }
 
     //tell everyone about their load
