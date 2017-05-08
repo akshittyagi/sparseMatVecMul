@@ -1,6 +1,6 @@
 #include "Util.h"
 
-#define THREADS_PER_BLOCK 32
+#define THREADS_PER_BLOCK 1024
 
 int N;
 int comm_size, proc_Id;
@@ -223,11 +223,13 @@ void getOutput() {
 	}
 }
 
-void wrapperForCuda(int load)
+void wrapperForCuda()
 {
 	int dimension = dim;
+	//Get the number of rows being handled by the current process 
 	int numRows = num_rows;
 		
+	//Each partition's rows[i], colsIndices[i] and values[i] 
 	int *currPartitionFirstElemsRows;
 	currPartitionFirstElemsRows = &own_mat_ptrs[0];
 
@@ -237,9 +239,11 @@ void wrapperForCuda(int load)
 	int *currPartitionNonZeroElems;
 	currPartitionNonZeroElems = &own_mat_data[0];
 
+	//Commom vector for all processes
 	int *vecTOR;
 	vecTOR = &vec[0];
 
+	//Device copies for computation
 	int *devCurrPartitionFirstElemsRows;
 	int *devCurrPartitionColIndices;
 	int *devCurrPartitionNonZeroElems;
@@ -250,11 +254,13 @@ void wrapperForCuda(int load)
 	int size2 = own_mat_indices.size()*sizeof(int);
 	int size3 = own_mat_data.size()*sizeof(int);
 
+	//Current process's computed output
 	own_output = (long long int *)malloc(sizeof(long long int)*numRows);
 	
 	//once
 	cudaMalloc((void **)&devFinalVec,numRows*sizeof(long long int));
 	cudaMalloc((void **)&devVec,dimension*sizeof(int));
+	
 	N = numRows;
 
 	cudaMalloc((void **)&devCurrPartitionFirstElemsRows,size1);
@@ -266,35 +272,28 @@ void wrapperForCuda(int load)
 	cudaMemcpy(devCurrPartitionNonZeroElems,currPartitionNonZeroElems,size3,cudaMemcpyHostToDevice);
 	cudaMemcpy(devVec,vecTOR,dimension*sizeof(int),cudaMemcpyHostToDevice);
 	
+	//Tuning for the problem size
 	int blocks;
 	int thrds;
-	if(num_rows<1024)
+	if(num_rows<THREADS_PER_BLOCK)
 	{
 		blocks  = 1;
 		thrds = num_rows;
 	}
 	else
 	{
-		thrds = 1024;
+		thrds = THREADS_PER_BLOCK;
 		blocks = (num_rows/thrds) + 1;
 	}
 
 	multKernel<<<blocks,thrds>>>(devCurrPartitionFirstElemsRows,devCurrPartitionColIndices,devCurrPartitionNonZeroElems,numRows,devVec,devFinalVec);
 
 	cudaMemcpy(own_output,devFinalVec,numRows*sizeof(long long int),cudaMemcpyDeviceToHost);
-	
-	// if(proc_Id == comm_size-1)
-	// {
-	// 	for(int i=0;i<numRows;i++)
-	// 	{
-	// 		cout<<own_output[i]<<" "<<endl;
-	// 	}
-	// }
 }
 
 void computeForEachProcess()
 {
-	wrapperForCuda(num_rows);
+	wrapperForCuda();
 }
 
 void fileWrite(char *name)
