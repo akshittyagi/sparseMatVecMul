@@ -6,12 +6,17 @@ INFILENAME = input_1024.txt
 OUTFILENAME = output.txt
 NUMPROCS = 8
 
-all: parallel
+all:  parallel
 
 parallel:
 	$(CC) $(MPIFLAGS) $(CFLAGS) mat_vec.cu -o $(EXECNAME)
 
-run: parallel
+hpcCompile:
+	module load compiler/cuda/7.5/compilervars
+	module load compiler/gcc/4.9.3/compilervars
+	module load mpi/mpich/3.1.4/gcc/mpivars
+
+run: 
 	mpirun -np $(NUMPROCS) ./$(EXECNAME) $(INFILENAME) $(OUTFILENAME) 
 
 clean:
