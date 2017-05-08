@@ -34,20 +34,7 @@ __global__ void multKernel(int *firstElemsRows,int *colIndices,int *nonZeroElems
 	{
 		int rowStart = firstElemsRows[currRow];
 		int rowEnd = firstElemsRows[currRow+1];
-		// if(currRow==numRows-1)
-		// {
-		// 	long long int lsum = 0;
-		// 	for(int i=0;i<rowEnd-rowStart;i++)
-		// 		{
-		// 			lsum += ((long long int)nonZeroElems[i])*((long long int)vecTOR[colIndices[i]]);
-		// 		}//printf("| %d VECTOR %d |",nonZeroElems[i],vecTOR[colIndices[i]]);
-		// 	printf("%lld ",lsum);
-		// }
-
 		output[currRow] = multRow(rowEnd-rowStart,colIndices+rowStart,nonZeroElems+rowStart,vecTOR);
-		
-		// if(currRow==numRows-1)
-		// printf("%lld\n",output[currRow]);
 	}
 
 }
